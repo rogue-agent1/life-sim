@@ -1,6 +1,6 @@
 # life-sim
 
-Simple artificial life simulation.""".
+Conway's Game of Life simulator.
 
 Zero dependencies. Python 3.8+.
 
