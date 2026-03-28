@@ -1,7 +1,11 @@
 # life-sim
-Conway's Game of Life terminal simulator. Zero dependencies.
+
+Simple artificial life simulation.""".
+
+Zero dependencies. Python 3.8+.
+
 ## Usage
+
 ```bash
-python3 life_sim.py --glider -g 50
-python3 life_sim.py -W 60 -H 30 --seed 42
+python3 life_sim.py --help
 ```
