@@ -1,35 +1,49 @@
 #!/usr/bin/env python3
 """life_sim - Conway's Game of Life."""
-import sys, time, os, random
+import sys, argparse, json, random, time
+
 def random_grid(w, h, density=0.3):
-    return {(r, c) for r in range(h) for c in range(w) if random.random() < density}
-def step(cells, w, h):
-    neighbors = {}
-    for r, c in cells:
-        for dr in (-1, 0, 1):
-            for dc in (-1, 0, 1):
-                if dr == 0 and dc == 0: continue
-                nr, nc = (r+dr) % h, (c+dc) % w
-                neighbors[(nr, nc)] = neighbors.get((nr, nc), 0) + 1
-    new = set()
-    for pos, n in neighbors.items():
-        if n == 3 or (n == 2 and pos in cells): new.add(pos)
+    return [[1 if random.random() < density else 0 for _ in range(w)] for _ in range(h)]
+
+def step(grid):
+    h, w = len(grid), len(grid[0])
+    new = [[0]*w for _ in range(h)]
+    for y in range(h):
+        for x in range(w):
+            n = sum(grid[(y+dy)%h][(x+dx)%w] for dy in (-1,0,1) for dx in (-1,0,1) if (dy,dx)!=(0,0))
+            if grid[y][x]:
+                new[y][x] = 1 if n in (2,3) else 0
+            else:
+                new[y][x] = 1 if n == 3 else 0
     return new
-def display(cells, w, h):
-    for r in range(h):
-        print("".join("█" if (r, c) in cells else " " for c in range(w)))
-PATTERNS = {
-    "glider": {(0,1),(1,2),(2,0),(2,1),(2,2)},
-    "blinker": {(1,0),(1,1),(1,2)},
-    "block": {(0,0),(0,1),(1,0),(1,1)},
-}
-if __name__ == "__main__":
-    w, h = 40, 20
-    gens = int(sys.argv[1]) if len(sys.argv) > 1 else 50
-    pattern = sys.argv[2] if len(sys.argv) > 2 else "random"
-    cells = PATTERNS.get(pattern, random_grid(w, h))
-    for g in range(gens):
-        os.system("clear" if os.name != "nt" else "cls")
-        print(f"Generation {g} | Population: {len(cells)}")
-        display(cells, w, h); cells = step(cells, w, h)
-        time.sleep(0.1)
+
+def render(grid):
+    return "
+".join("".join("█" if c else " " for c in row) for row in grid)
+
+def count_alive(grid):
+    return sum(sum(row) for row in grid)
+
+def main():
+    p = argparse.ArgumentParser(description="Game of Life")
+    p.add_argument("--width", type=int, default=40)
+    p.add_argument("--height", type=int, default=20)
+    p.add_argument("--steps", type=int, default=10)
+    p.add_argument("--density", type=float, default=0.3)
+    p.add_argument("--seed", type=int)
+    p.add_argument("--json", action="store_true")
+    args = p.parse_args()
+    if args.seed: random.seed(args.seed)
+    grid = random_grid(args.width, args.height, args.density)
+    history = [{"step": 0, "alive": count_alive(grid)}]
+    for i in range(1, args.steps + 1):
+        grid = step(grid)
+        history.append({"step": i, "alive": count_alive(grid)})
+    if args.json:
+        print(json.dumps({"width": args.width, "height": args.height, "steps": args.steps, "history": history}))
+    else:
+        print(render(grid))
+        print(f"
+Step {args.steps}: {count_alive(grid)} alive cells")
+
+if __name__ == "__main__": main()
